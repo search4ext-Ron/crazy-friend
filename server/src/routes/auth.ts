@@ -34,7 +34,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
     const token = jwt.sign(
       { userId: result.lastInsertRowid },
       env.JWT_SECRET,
-      { expiresIn: env.JWT_EXPIRES_IN as string | number }
+      { expiresIn: env.JWT_EXPIRES_IN }
     );
 
     logger.info('User registered', { userId: result.lastInsertRowid, email });
