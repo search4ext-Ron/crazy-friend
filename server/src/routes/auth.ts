@@ -31,13 +31,10 @@ router.post('/register', validate(registerSchema), async (req, res) => {
       VALUES (?, ?)
     `).run(email, passwordHash);
 
-    const signOptions: SignOptions = {
-      expiresIn: env.JWT_EXPIRES_IN,
-    };
     const token = jwt.sign(
       { userId: result.lastInsertRowid },
       env.JWT_SECRET,
-      signOptions
+      { expiresIn: env.JWT_EXPIRES_IN } as SignOptions
     );
 
     logger.info('User registered', { userId: result.lastInsertRowid, email });
@@ -86,13 +83,10 @@ router.post('/login', validate(loginSchema), async (req, res) => {
       }
     }
 
-    const signOptions: SignOptions = {
-      expiresIn: env.JWT_EXPIRES_IN,
-    };
     const token = jwt.sign(
       { userId: user.id },
       env.JWT_SECRET,
-      signOptions
+      { expiresIn: env.JWT_EXPIRES_IN } as SignOptions
     );
 
     logger.info('User logged in', { userId: user.id, email });
