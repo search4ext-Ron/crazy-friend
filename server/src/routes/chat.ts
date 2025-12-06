@@ -91,7 +91,7 @@ router.post('/message', authenticateToken, validate(messageSchema), async (req: 
       const crisisResponse = await llmService.generateResponse(
         message,
         session.character_id,
-        req.userId,
+        req.userId || 0,
         sessionId
       );
 
@@ -123,7 +123,7 @@ router.post('/message', authenticateToken, validate(messageSchema), async (req: 
     const response = await llmService.generateResponse(
       message,
       session.character_id,
-      req.userId,
+      req.userId || 0,
       sessionId
     );
 

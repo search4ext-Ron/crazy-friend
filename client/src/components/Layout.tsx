@@ -1,10 +1,13 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
+import FreeQuestion from './FreeQuestion';
 import './Layout.css';
 
 export default function Layout() {
   const { token, clearAuth } = useAuthStore();
   const location = useLocation();
+  const [showFreeQuestion, setShowFreeQuestion] = useState(false);
 
   const handleLogout = () => {
     clearAuth();
@@ -39,6 +42,17 @@ export default function Layout() {
               FAQ
             </Link>
             
+            <button 
+              onClick={() => {
+                console.log('Button clicked, opening modal');
+                setShowFreeQuestion(true);
+              }} 
+              className="free-question-btn"
+              type="button"
+            >
+              Ask Me Something
+            </button>
+            
             {token ? (
               <>
                 <Link 
@@ -72,6 +86,15 @@ export default function Layout() {
       <main className="main">
         <Outlet />
       </main>
+
+      {showFreeQuestion && (
+        <FreeQuestion 
+          onClose={() => {
+            console.log('Closing modal');
+            setShowFreeQuestion(false);
+          }} 
+        />
+      )}
 
       <footer className="footer">
         <div className="footer-content">

@@ -1,27 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import FreeQuestion from '../components/FreeQuestion';
-import api from '../api/client';
 import './Home.css';
 
 export default function Home() {
   const { token } = useAuthStore();
   const [showFreeQuestion, setShowFreeQuestion] = useState(false);
-  const [characters, setCharacters] = useState<any[]>([]);
-
-  useEffect(() => {
-    // Load characters for free question feature
-    const loadCharacters = async () => {
-      try {
-        const res = await api.get('/characters');
-        setCharacters(res.data.characters || []);
-      } catch (error) {
-        console.error('Failed to load characters:', error);
-      }
-    };
-    loadCharacters();
-  }, []);
 
   return (
     <div className="home-container">
@@ -138,7 +123,6 @@ export default function Home() {
 
       {showFreeQuestion && (
         <FreeQuestion
-          characters={characters}
           onClose={() => setShowFreeQuestion(false)}
         />
       )}

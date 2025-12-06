@@ -3,20 +3,11 @@ import { Link } from 'react-router-dom';
 import api from '../api/client';
 import './FreeQuestion.css';
 
-interface Character {
-  id: number;
-  name: string;
-  gender: string;
-  persona_type: string;
-}
-
 interface FreeQuestionProps {
-  characters: Character[];
   onClose: () => void;
 }
 
-export default function FreeQuestion({ characters, onClose }: FreeQuestionProps) {
-  const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
+export default function FreeQuestion({ onClose }: FreeQuestionProps) {
   const [question, setQuestion] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,12 +15,29 @@ export default function FreeQuestion({ characters, onClose }: FreeQuestionProps)
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [displayedText, setDisplayedText] = useState('');
   const [showResponse, setShowResponse] = useState(false);
+  const [characterName, setCharacterName] = useState('Your Crazy Friend');
   
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Try to load a character, but don't block if it fails
+    const loadDefaultCharacter = async () => {
+      try {
+        const res = await api.get('/characters', { timeout: 5000 });
+        const chars = res.data.characters || res.data || [];
+        if (chars.length > 0) {
+          // Use first character as default
+          setCharacterName(chars[0].name);
+        }
+      } catch (error) {
+        // Silently fail - use default name
+        console.log('Using default character name');
+      }
+    };
+    loadDefaultCharacter();
+
     // Initialize speech recognition
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
@@ -97,7 +105,7 @@ export default function FreeQuestion({ characters, onClose }: FreeQuestionProps)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCharacter || !question.trim() || isLoading) return;
+    if (!question.trim() || isLoading) return;
 
     setIsLoading(true);
     setResponse('');
@@ -105,11 +113,35 @@ export default function FreeQuestion({ characters, onClose }: FreeQuestionProps)
     setShowResponse(true);
 
     try {
+      // Try to get a character first, or use default ID
+      let characterId = 1; // Default to first character
+      try {
+        const charsRes = await api.get('/characters', { timeout: 3000 });
+        const chars = charsRes.data.characters || charsRes.data || [];
+        if (chars.length > 0) {
+          characterId = chars[0].id;
+          setCharacterName(chars[0].name);
+        }
+      } catch (err) {
+        // Use default character ID
+        console.log('Using default character ID');
+      }
+
+      console.log('Sending question to API:', { 
+        characterId, 
+        question: question.substring(0, 50) + '...',
+        apiUrl: api.defaults.baseURL 
+      });
+
       // Use the free question endpoint (no auth required)
       const messageRes = await api.post('/free-question', {
-        characterId: selectedCharacter.id,
+        characterId: characterId,
         question: question,
+      }, {
+        timeout: 30000, // 30 second timeout for AI response
       });
+      
+      console.log('API response received:', messageRes.data);
 
       const aiResponse = messageRes.data.response;
       setResponse(aiResponse);
@@ -122,32 +154,62 @@ export default function FreeQuestion({ characters, onClose }: FreeQuestionProps)
           index++;
         } else {
           clearInterval(typeInterval);
-          // Start speaking after text is displayed
-          speakResponse(aiResponse);
+          // Start speaking after text is fully displayed
+          setTimeout(() => {
+            speakResponse(aiResponse);
+          }, 500);
         }
       }, 30);
 
     } catch (error: any) {
-      console.error('Error:', error);
-      const errorMsg = error.response?.data?.error || 'Failed to get response. Please try again.';
+      console.error('Error getting response:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        request: error.request,
+        config: error.config?.url
+      });
+      
+      let errorMsg = 'Failed to get response. ';
+      
+      if (error.response) {
+        if (error.response.status === 404) {
+          errorMsg += 'Backend not found (404). The Railway service may not be running. Please check Railway dashboard.';
+        } else if (error.response.status === 500) {
+          errorMsg += 'Server error (500). Please check Railway logs.';
+        } else {
+          errorMsg += error.response.data?.error || `Error ${error.response.status}. Check console for details.`;
+        }
+      } else if (error.request) {
+        errorMsg += 'Cannot connect to server. The backend at ' + (api.defaults.baseURL || '/api') + ' is not responding. Please check if Railway service is running.';
+      } else if (error.message) {
+        errorMsg += error.message + '. Check browser console for details.';
+      } else {
+        errorMsg += 'Unknown error. Check browser console (F12) for details.';
+      }
+      
       setResponse(errorMsg);
       setDisplayedText(errorMsg);
+      
+      // Still try to speak the error message
+      speakResponse(errorMsg);
     } finally {
       setIsLoading(false);
     }
   };
 
   const speakResponse = (text: string) => {
-    if (synthRef.current && selectedCharacter) {
+    if (synthRef.current) {
       const utterance = new SpeechSynthesisUtterance(text);
-      const characterName = selectedCharacter.name.toLowerCase();
+      const name = characterName.toLowerCase();
       
-      // Select voice settings based on character
-      if (characterName.includes('brooklyn') || characterName.includes('new yorker')) {
+      // Select voice settings based on character name
+      if (name.includes('brooklyn') || name.includes('new yorker')) {
         utterance.rate = 1.2; // Faster for New Yorker
-      } else if (characterName.includes('cowboy') || characterName.includes('tex')) {
+      } else if (name.includes('cowboy') || name.includes('tex')) {
         utterance.rate = 0.9; // Slower for Cowboy
-      } else if (characterName.includes('valley') || characterName.includes('brittany')) {
+      } else if (name.includes('valley') || name.includes('brittany')) {
         utterance.pitch = 1.2; // Higher pitch for Valley Girl
       }
       
@@ -170,46 +232,15 @@ export default function FreeQuestion({ characters, onClose }: FreeQuestionProps)
   };
 
 
-  if (!selectedCharacter) {
-    return (
-      <div className="free-question-modal">
-        <div className="free-question-content">
-          <button className="close-btn" onClick={onClose}>×</button>
-          <h2>Try One Question Free!</h2>
-          <p className="subtitle">Choose a character to get started</p>
-          
-          <div className="characters-grid-free">
-            {characters.map((char) => (
-              <button
-                key={char.id}
-                className="character-card-free"
-                onClick={() => setSelectedCharacter(char)}
-              >
-                <div className="character-emoji-free">
-                  {char.gender === 'male' ? '👨' : '👩'}
-                </div>
-                <div className="character-name-free">{char.name}</div>
-                <div className="character-type-free">{char.persona_type.replace('_', ' ')}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="free-question-modal">
       <div className="free-question-content">
         <button className="close-btn" onClick={onClose}>×</button>
         
         <div className="selected-character-header">
-          <button className="back-btn" onClick={() => setSelectedCharacter(null)}>← Back</button>
           <div className="character-info-free">
-            <span className="character-emoji-small">
-              {selectedCharacter.gender === 'male' ? '👨' : '👩'}
-            </span>
-            <span className="character-name-header">{selectedCharacter.name}</span>
+            <span className="character-emoji-small">🤪</span>
+            <span className="character-name-header">{characterName}</span>
           </div>
         </div>
 
@@ -221,9 +252,9 @@ export default function FreeQuestion({ characters, onClose }: FreeQuestionProps)
                 id="question"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Type your question or use the microphone..."
+                placeholder="Type your question or click the microphone to speak..."
                 rows={4}
-                disabled={isLoading}
+                disabled={isLoading || isRecording}
                 className="question-input"
               />
               <button
@@ -231,9 +262,10 @@ export default function FreeQuestion({ characters, onClose }: FreeQuestionProps)
                 onClick={isRecording ? stopRecording : startRecording}
                 className={`mic-btn ${isRecording ? 'recording' : ''}`}
                 disabled={isLoading}
-                title={isRecording ? 'Stop recording' : 'Record voice'}
+                title={isRecording ? 'Stop recording' : 'Click to speak your question'}
+                aria-label={isRecording ? 'Stop recording' : 'Start voice recording'}
               >
-                🎤
+                {isRecording ? '🔴' : '🎤'}
               </button>
             </div>
             {isRecording && (
@@ -244,7 +276,7 @@ export default function FreeQuestion({ characters, onClose }: FreeQuestionProps)
             )}
             <button
               type="submit"
-              disabled={!question.trim() || isLoading}
+              disabled={!question.trim() || isLoading || isRecording}
               className="submit-question-btn"
             >
               {isLoading ? 'Getting Response...' : 'Ask Question'}
@@ -253,7 +285,7 @@ export default function FreeQuestion({ characters, onClose }: FreeQuestionProps)
         ) : (
           <div className="response-container">
             <div className="response-header">
-              <h3>{selectedCharacter.name}'s Response:</h3>
+              <h3>{characterName}'s Response:</h3>
               <div className="audio-controls">
                 {isSpeaking ? (
                   <button onClick={stopSpeaking} className="stop-audio-btn">

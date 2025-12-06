@@ -30,7 +30,7 @@ export function authenticateToken(req: AuthRequest, res: Response, next: NextFun
     req.user = user;
     next();
   } catch (error) {
-    logger.warn('Invalid token attempt', { ip: req.ip });
+    logger.warn('Invalid token attempt', { ip: (req as any).ip || 'unknown' });
     return res.status(403).json({ error: 'Invalid or expired token' });
   }
 }

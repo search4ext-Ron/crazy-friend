@@ -13,7 +13,9 @@ if (!fs.existsSync(dbDir)) {
 export const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
-export function initializeDatabase() {
+export function initializeDatabase(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    try {
   // Users table
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -121,6 +123,11 @@ export function initializeDatabase() {
 
   // Initialize default characters
   initializeDefaultCharacters();
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
 }
 
 function initializeDefaultCharacters() {
