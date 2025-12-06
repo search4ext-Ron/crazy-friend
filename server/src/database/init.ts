@@ -16,113 +16,113 @@ db.pragma('journal_mode = WAL');
 export function initializeDatabase(): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
-  // Users table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      two_factor_secret TEXT,
-      two_factor_enabled INTEGER DEFAULT 0,
-      subscription_tier TEXT DEFAULT 'free',
-      subscription_expires_at TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+      // Users table
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email TEXT UNIQUE NOT NULL,
+          password_hash TEXT NOT NULL,
+          two_factor_secret TEXT,
+          two_factor_enabled INTEGER DEFAULT 0,
+          subscription_tier TEXT DEFAULT 'free',
+          subscription_expires_at TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
 
-  // User profiles table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS user_profiles (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      age INTEGER,
-      sex TEXT,
-      ethnicity TEXT,
-      sexual_orientation TEXT,
-      location TEXT,
-      preferred_comedy_styles TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `);
+      // User profiles table
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS user_profiles (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          age INTEGER,
+          sex TEXT,
+          ethnicity TEXT,
+          sexual_orientation TEXT,
+          location TEXT,
+          preferred_comedy_styles TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      `);
 
-  // Characters table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS characters (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      gender TEXT NOT NULL,
-      persona_type TEXT NOT NULL,
-      voice_description TEXT,
-      accent_description TEXT,
-      vernacular TEXT,
-      worldview TEXT,
-      comedy_styles TEXT,
-      is_active INTEGER DEFAULT 1,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+      // Characters table
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS characters (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          gender TEXT NOT NULL,
+          persona_type TEXT NOT NULL,
+          voice_description TEXT,
+          accent_description TEXT,
+          vernacular TEXT,
+          worldview TEXT,
+          comedy_styles TEXT,
+          is_active INTEGER DEFAULT 1,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
 
-  // Chat sessions table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS chat_sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      character_id INTEGER,
-      comedy_styles TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY (character_id) REFERENCES characters(id)
-    )
-  `);
+      // Chat sessions table
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS chat_sessions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          character_id INTEGER,
+          comedy_styles TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY (character_id) REFERENCES characters(id)
+        )
+      `);
 
-  // Messages table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS messages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      session_id INTEGER NOT NULL,
-      role TEXT NOT NULL,
-      content TEXT NOT NULL,
-      is_voice INTEGER DEFAULT 0,
-      feedback_score INTEGER,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
-    )
-  `);
+      // Messages table
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS messages (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          session_id INTEGER NOT NULL,
+          role TEXT NOT NULL,
+          content TEXT NOT NULL,
+          is_voice INTEGER DEFAULT 0,
+          feedback_score INTEGER,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+        )
+      `);
 
-  // User feedback table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS user_feedback (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      session_id INTEGER,
-      message_id INTEGER,
-      feedback_type TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY (session_id) REFERENCES chat_sessions(id),
-      FOREIGN KEY (message_id) REFERENCES messages(id)
-    )
-  `);
+      // User feedback table
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS user_feedback (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          session_id INTEGER,
+          message_id INTEGER,
+          feedback_type TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY (session_id) REFERENCES chat_sessions(id),
+          FOREIGN KEY (message_id) REFERENCES messages(id)
+        )
+      `);
 
-  // Admin logs table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS admin_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      admin_user_id INTEGER NOT NULL,
-      action TEXT NOT NULL,
-      details TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (admin_user_id) REFERENCES users(id)
-    )
-  `);
+      // Admin logs table
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS admin_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          admin_user_id INTEGER NOT NULL,
+          action TEXT NOT NULL,
+          details TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (admin_user_id) REFERENCES users(id)
+        )
+      `);
 
-  // Initialize default characters
-  initializeDefaultCharacters();
+      // Initialize default characters
+      initializeDefaultCharacters();
       resolve();
     } catch (error) {
       reject(error);
