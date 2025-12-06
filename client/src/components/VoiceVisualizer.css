@@ -1,0 +1,16 @@
+.voice-visualizer {
+  padding: 1rem;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.voice-visualizer canvas {
+  width: 100%;
+  max-width: 400px;
+  height: 60px;
+  border-radius: 0.5rem;
+}
+

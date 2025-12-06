@@ -1,0 +1,23 @@
+{
+  "name": "crazy-friend",
+  "version": "1.0.0",
+  "description": "A hilariously unhinged advice chatbot PWA",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "server:dev": "cd server && npm run dev",
+    "client:dev": "cd client && npm start",
+    "build": "cd client && npm run build && cd ../server && npm run build",
+    "build:vercel": "cd client && npm install && npm run build",
+    "start": "cd server && npm start",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "vercel-build": "npm run build:vercel"
+  },
+  "keywords": ["chatbot", "comedy", "pwa", "ai"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
+
