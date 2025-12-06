@@ -34,7 +34,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
     const token = jwt.sign(
       { userId: result.lastInsertRowid },
       env.JWT_SECRET,
-      { expiresIn: env.JWT_EXPIRES_IN } as SignOptions
+      { expiresIn: env.JWT_EXPIRES_IN } as any
     );
 
     logger.info('User registered', { userId: result.lastInsertRowid, email });
@@ -86,7 +86,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     const token = jwt.sign(
       { userId: user.id },
       env.JWT_SECRET,
-      { expiresIn: env.JWT_EXPIRES_IN } as SignOptions
+      { expiresIn: env.JWT_EXPIRES_IN } as any
     );
 
     logger.info('User logged in', { userId: user.id, email });
