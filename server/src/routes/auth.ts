@@ -1,6 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import jwt, { SignOptions } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 import { db } from '../database/init';
@@ -31,10 +31,11 @@ router.post('/register', validate(registerSchema), async (req, res) => {
       VALUES (?, ?)
     `).run(email, passwordHash);
 
+    // @ts-ignore - JWT type issue with expiresIn
     const token = jwt.sign(
       { userId: result.lastInsertRowid },
       env.JWT_SECRET,
-      { expiresIn: env.JWT_EXPIRES_IN } as any
+      { expiresIn: env.JWT_EXPIRES_IN }
     );
 
     logger.info('User registered', { userId: result.lastInsertRowid, email });
@@ -83,10 +84,11 @@ router.post('/login', validate(loginSchema), async (req, res) => {
       }
     }
 
+    // @ts-ignore - JWT type issue with expiresIn
     const token = jwt.sign(
       { userId: user.id },
       env.JWT_SECRET,
-      { expiresIn: env.JWT_EXPIRES_IN } as any
+      { expiresIn: env.JWT_EXPIRES_IN }
     );
 
     logger.info('User logged in', { userId: user.id, email });
