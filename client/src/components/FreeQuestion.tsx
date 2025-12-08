@@ -175,14 +175,14 @@ export default function FreeQuestion({ onClose }: FreeQuestionProps) {
       
       if (error.response) {
         if (error.response.status === 404) {
-          errorMsg += 'Backend not found (404). The Railway service may not be running. Please check Railway dashboard.';
+          errorMsg += 'Backend not found (404). The backend service may not be running. Please check the backend dashboard.';
         } else if (error.response.status === 500) {
-          errorMsg += 'Server error (500). Please check Railway logs.';
+          errorMsg += 'Server error (500). Please check backend logs.';
         } else {
           errorMsg += error.response.data?.error || `Error ${error.response.status}. Check console for details.`;
         }
       } else if (error.request) {
-        errorMsg += 'Cannot connect to server. The backend at ' + (api.defaults.baseURL || '/api') + ' is not responding. Please check if Railway service is running.';
+        errorMsg += 'Cannot connect to server. The backend at ' + (api.defaults.baseURL || '/api') + ' is not responding. Please check if the backend service is running.';
       } else if (error.message) {
         errorMsg += error.message + '. Check browser console for details.';
       } else {
