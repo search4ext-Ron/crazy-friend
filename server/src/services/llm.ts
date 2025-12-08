@@ -1,4 +1,4 @@
-import { ChatOpenAI } from '@langchain/openai';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { ChatPromptTemplate } from 'langchain/prompts';
 import { db } from '../database/init';
 import { detectSelfHarm, getCrisisResponse } from '../utils/safety';
@@ -20,19 +20,19 @@ const COMEDY_STYLES = {
 };
 
 export class LLMService {
-  private llm: ChatOpenAI;
+  private llm: ChatGoogleGenerativeAI;
 
   constructor() {
-    const apiKey = env.OPENAI_API_KEY;
-    if (!apiKey || apiKey === 'your-openai-api-key-here') {
-      logger.warn('OPENAI_API_KEY not properly configured - LLM service will use mock responses');
+    const apiKey = env.GEMINI_API_KEY;
+    if (!apiKey || apiKey === 'your-gemini-api-key-here') {
+      logger.warn('GEMINI_API_KEY not properly configured - LLM service will use mock responses');
     }
     
-    this.llm = new ChatOpenAI({
-      openAIApiKey: apiKey,
-      modelName: 'gpt-4',
+    this.llm = new ChatGoogleGenerativeAI({
+      modelName: 'gemini-pro',
       temperature: 0.9,
-      maxTokens: 500,
+      maxOutputTokens: 500,
+      apiKey: apiKey,
     });
   }
 
@@ -134,7 +134,7 @@ User's message: ${userMessage}
       });
       
       // Fallback mock response if API fails
-      if (!env.OPENAI_API_KEY || env.OPENAI_API_KEY === 'your-openai-api-key-here' || error.message?.includes('mock')) {
+      if (!env.GEMINI_API_KEY || env.GEMINI_API_KEY === 'your-gemini-api-key-here' || error.message?.includes('mock')) {
         return this.getMockResponse(character, userMessage);
       }
       

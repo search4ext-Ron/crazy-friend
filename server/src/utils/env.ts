@@ -8,7 +8,7 @@ interface EnvConfig {
   JWT_SECRET: string;
   JWT_EXPIRES_IN: string;
   DATABASE_PATH: string;
-  OPENAI_API_KEY: string;
+  GEMINI_API_KEY: string;
   TOTP_ISSUER: string;
   CRISIS_HOTLINE: string;
   ADMIN_EMAILS: string[];
@@ -21,7 +21,7 @@ interface EnvConfig {
 function validateEnv(): EnvConfig {
   const required = [
     'JWT_SECRET',
-    'OPENAI_API_KEY',
+    'GEMINI_API_KEY',
     'ENCRYPTION_KEY',
   ];
 
@@ -47,7 +47,7 @@ function validateEnv(): EnvConfig {
     JWT_SECRET: process.env.JWT_SECRET!,
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
     DATABASE_PATH: process.env.DATABASE_PATH || './data/crazyfriend.db',
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY!,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY!,
     TOTP_ISSUER: process.env.TOTP_ISSUER || 'Crazy Friend',
     CRISIS_HOTLINE: process.env.CRISIS_HOTLINE || '988',
     ADMIN_EMAILS: (process.env.ADMIN_EMAILS || '').split(',').filter(Boolean),
