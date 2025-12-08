@@ -54,9 +54,29 @@ app.use('/api/', limiter);
 // Middleware
 app.use(compression());
 app.use(cors({
-  origin: env.NODE_ENV === 'production' 
-    ? env.CLIENT_URL 
-    : 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (env.NODE_ENV === 'production') {
+      // Allow CLIENT_URL if set
+      if (env.CLIENT_URL && origin === env.CLIENT_URL) {
+        return callback(null, true);
+      }
+      // Allow any Vercel domain
+      if (origin.includes('.vercel.app')) {
+        return callback(null, true);
+      }
+      // Allow localhost for testing
+      if (origin.includes('localhost')) {
+        return callback(null, true);
+      }
+      callback(new Error('Not allowed by CORS'));
+    } else {
+      // Development: allow localhost
+      callback(null, true);
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200,
 }));
