@@ -1,5 +1,4 @@
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-import { ChatPromptTemplate } from 'langchain/prompts';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { db } from '../database/init';
 import { detectSelfHarm, getCrisisResponse } from '../utils/safety';
 import { env } from '../utils/env';
@@ -20,20 +19,23 @@ const COMEDY_STYLES = {
 };
 
 export class LLMService {
-  private llm: ChatGoogleGenerativeAI;
+  private genAI: GoogleGenerativeAI | null = null;
+  private model: any = null;
 
   constructor() {
     const apiKey = env.GEMINI_API_KEY;
     if (!apiKey || apiKey === 'your-gemini-api-key-here') {
       logger.warn('GEMINI_API_KEY not properly configured - LLM service will use mock responses');
+      return;
     }
     
-    this.llm = new ChatGoogleGenerativeAI({
-      modelName: 'gemini-pro',
-      temperature: 0.9,
-      maxOutputTokens: 500,
-      apiKey: apiKey,
-    });
+    try {
+      this.genAI = new GoogleGenerativeAI(apiKey);
+      this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+      logger.info('Gemini AI initialized successfully');
+    } catch (error: any) {
+      logger.error('Failed to initialize Gemini AI', { error: error.message });
+    }
   }
 
   async generateResponse(
@@ -117,15 +119,16 @@ User's message: ${userMessage}
 `;
 
     try {
-      const prompt = ChatPromptTemplate.fromMessages([
-        ['system', personaPrompt],
-        ['human', '{input}'],
-      ]);
+      if (!this.model) {
+        logger.warn('Gemini model not initialized, using mock response');
+        return this.getMockResponse(character, userMessage);
+      }
 
-      const chain = prompt.pipe(this.llm);
-      const response = await chain.invoke({ input: userMessage });
+      const result = await this.model.generateContent(personaPrompt);
+      const response = await result.response;
+      const text = response.text();
       
-      return response.content as string;
+      return text;
     } catch (error: any) {
       logger.error('LLM generation error', {
         error: error.message,
@@ -180,4 +183,3 @@ User's message: ${userMessage}
 }
 
 export const llmService = new LLMService();
-
